@@ -73,6 +73,27 @@ def test_create_notebook_logged_in(fake_user, client, notebook_post_blob):
     assert NotebookRevision.objects.count() == 1
 
 
+@pytest.mark.parametrize("authorized", [True, False])
+def test_create_notebook_for_another_user(
+    fake_user, fake_user2, client, notebook_post_blob, authorized
+):
+    notebook_post_blob.update({"owner": fake_user2.username})
+    fake_user.can_create_on_behalf_of_others = authorized
+    fake_user.save()
+    client.force_login(user=fake_user)
+    resp = client.post(reverse("notebooks-list"), notebook_post_blob)
+    if authorized:
+        assert resp.status_code == 201
+        assert Notebook.objects.count() == 1
+        notebook = Notebook.objects.first()
+        assert notebook.title == notebook_post_blob["title"]
+        assert notebook.owner == fake_user2
+    else:
+        assert resp.status_code == 403
+        assert Notebook.objects.count() == 0
+        assert NotebookRevision.objects.count() == 0
+
+
 def test_delete_notebook_not_logged_in(test_notebook, client):
     # should not be able to delete a notebook if not logged in
     resp = client.delete(reverse("notebooks-detail", kwargs={"pk": test_notebook.id}))
