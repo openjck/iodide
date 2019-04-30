@@ -293,10 +293,11 @@ export function saveNotebookRequest(
 }
 
 export function createNewNotebookOnServer(options = { forkedFrom: undefined }) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
+    const { forkedFrom } = options;
     const state = getState();
     const postRequestOptions = getNotebookSaveRequestOptions(state, {
-      forkedFrom: options.forkedFrom
+      forkedFrom
     });
     return saveNotebookRequest(
       "/api/v1/notebooks/",
@@ -314,6 +315,14 @@ export function createNewNotebookOnServer(options = { forkedFrom: undefined }) {
         dispatch({ type: "ADD_NOTEBOOK_ID", id: json.id });
         window.history.replaceState({}, "", `/notebooks/${json.id}`);
         dispatch({ type: "NOTEBOOK_SAVED" });
+        if (forkedFrom) {
+          // this is where we dispatch the ownership info
+          dispatch({
+            type: "SET_NOTEBOOK_OWNER_IN_SESSION",
+            owner: state.userData,
+            forkedFrom
+          });
+        }
       })
       .catch(() => {
         // do nothing here.
