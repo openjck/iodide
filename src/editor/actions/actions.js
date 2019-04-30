@@ -313,7 +313,7 @@ export function createNewNotebookOnServer(options = { forkedFrom: undefined }) {
           })
         );
         dispatch({ type: "ADD_NOTEBOOK_ID", id: json.id });
-        window.history.replaceState({}, "", `/notebooks/${json.id}`);
+        window.history.replaceState({}, "", `/notebooks/${json.id}/`);
         dispatch({ type: "NOTEBOOK_SAVED" });
         if (forkedFrom) {
           // this is where we dispatch the ownership info
