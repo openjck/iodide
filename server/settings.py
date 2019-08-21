@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     "server.jwt",
     "server.notebooks",
     "server.files",
+    "kernels.apps.Kernels",
 ]
 
 RESTRICT_API = env.bool("RESTRICT_API", default=False)
