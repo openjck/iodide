@@ -186,6 +186,6 @@ whitenoise==4.1.4 \
 zipp==0.6.0 \
     --hash=sha256:f06903e9f1f43b12d371004b4ac7b06ab39a44adc747266928ae6debfa7b3335 \
     --hash=sha256:3718b1cbcd963c7d4c5511a8240812904164b7f381b647143a89d3b98f9bcd8e
-class-registry==2.1.2 \
-    --hash=sha256:678bdb0322566c07a4d8905140d364bd34a73baf46bf7580fc2e06fa994d4e7e \
-    --hash=sha256:cfb855514753e2edfe8d88b14a6e449820682fe0983efe61b83df28b688b3e5a
+phx-class-registry==3.0.5 \
+    --hash=sha256:ebb6aa3d232f1a5081a00dab2551693bb39ac78359e01b42a9c157ef9a5f85ef \
+    --hash=sha256:f11462ac410a8cda38c2b6a83b51a2390c7d9528baef591cb5b551b11aba2a92
