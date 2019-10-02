@@ -19,6 +19,8 @@ import FeaturedNotebooks from "../../shared/components/featured-notebooks";
 import DropTarget from "../../shared/components/drop-target";
 import THEME from "../../shared/theme";
 import { sharedProperties } from "../../server/style/base";
+import { createNotebookRequest } from "../../shared/server-api/notebook";
+import { saveFileToServer } from "../../shared/utils/file-operations";
 import { fadeIn, bounce } from "../../shared/keyframes";
 
 const Overlay = styled.div`
@@ -128,18 +130,67 @@ export default function HomePage({ notebookList, userInfo, headerMessage }) {
   const [filesMeta, setFilesMeta] = React.useState([]);
   const isLoggedIn = "name" in userInfo;
 
-  React.useEffect(() => {
-    if (overlayVisible) {
-      previousBodyOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = previousBodyOverflow;
-    }
+  React.useEffect(
+    function toggleOverlay() {
+      if (overlayVisible) {
+        previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = previousBodyOverflow;
+      }
 
-    return function cleanup() {
-      document.body.style.overflow = previousBodyOverflow;
-    };
-  }, [overlayVisible]);
+      return function cleanup() {
+        document.body.style.overflow = previousBodyOverflow;
+      };
+    },
+    [overlayVisible]
+  );
+
+  React.useEffect(
+    function handleDroppedFiles() {
+      if (filesMeta.length === 0) return;
+
+      // useEffect will not accept an async function, so we need to write an
+      // inner async function and immediately call it
+      async function handleDroppedFilesInner() {
+        const redirectDelay = 1500;
+
+        const fetches = filesMeta.map(
+          ({ file }, i) => `text: file${i}=${file.name}`
+        );
+
+        const body = `%% fetch\n${fetches.join("\n")}`;
+
+        const { id: notebookID } = await createNotebookRequest(
+          "New Notebook",
+          body
+        );
+
+        await Promise.all(
+          filesMeta.map(({ file }, i) => {
+            return saveFileToServer(
+              notebookID,
+              file,
+              file.name,
+              undefined,
+              true
+            ).then(() => {
+              const filesMetaCopy = [...filesMeta];
+              filesMetaCopy[i].status = "saved";
+              setFilesMeta(filesMetaCopy);
+            });
+          })
+        );
+
+        setTimeout(() => {
+          window.location.href = `${window.location}notebooks/${notebookID}`;
+        }, redirectDelay);
+      }
+
+      handleDroppedFilesInner();
+    },
+    [filesMeta.length !== 0]
+  );
 
   function onHoverStart(e) {
     setNumHoveredFiles(e.dataTransfer.items.length);
@@ -151,23 +202,15 @@ export default function HomePage({ notebookList, userInfo, headerMessage }) {
   }
 
   function onDrop(e) {
-    // Don't let the user drop more files if some files are already uploading
+    // Don't let the user drop more files if some are already uploading
     if (filesMeta.length) return;
 
-    let id = 1;
-
     setFilesMeta(
-      Array.from(e.dataTransfer.files).map(file => {
-        const fileMeta = {
-          file,
-          id,
-          status: "uploading"
-        };
-
-        id += 1;
-
-        return fileMeta;
-      })
+      Array.from(e.dataTransfer.files).map((file, i) => ({
+        id: i,
+        file,
+        status: "uploading"
+      }))
     );
   }
 
